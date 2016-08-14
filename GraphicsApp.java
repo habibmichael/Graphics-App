@@ -114,10 +114,10 @@ BufferedImage bufferedImage, bufferedImageBackup;
     				bufferedImage = ImageIO.read(input);
     				
     				//resize window to match image
-    				setSize(getInsets().left + getInsets().right+
-    						Math.max(400,bufferedImage.getWidth()+60),
-    						getInsets().top+getInsets().bottom+
-    						Math.max(340,bufferedImage.getHeight()+60));
+    				   setSize(getInsets().left + getInsets().right + 
+    	                        Math.max(400, bufferedImage.getWidth() + 60), 
+    	                        getInsets().top + getInsets().bottom + 
+    	                        Math.max(340, bufferedImage.getHeight() + 60));
     				
     				//Move buttons to fit image 
     				button1.setBounds(30,getHeight()-30,60,20);
@@ -273,6 +273,32 @@ BufferedImage bufferedImage, bufferedImageBackup;
     		//Blurring an Image
     	} if(event.getSource()==button4){
     		
+    		bufferedImageBackup = bufferedImage;
+    		Kernel kernel = new Kernel(3,3,new float[]{
+    				.25f,0,.25f,0,0,0,.25f,0,.25f
+    		});
+    		
+    		ConvolveOp convolveOp = new ConvolveOp(kernel);
+    		BufferedImage temp = new BufferedImage(
+    				bufferedImage.getWidth(),bufferedImage.getHeight(),
+    				BufferedImage.TYPE_INT_ARGB);
+    		
+    		convolveOp.filter(bufferedImage,temp);
+    		bufferedImage = temp;
+    		repaint();
+    		
+    	} //Reducing an image by a factor of 2
+    	if(event.getSource()==button5){
+    		image= bufferedImage.getScaledInstance(bufferedImage.getWidth()/2,
+    				bufferedImage.getHeight()/2,0);
+    		
+    		bufferedImage = new BufferedImage(bufferedImage.getWidth()/2,
+    				bufferedImage.getHeight()/2,BufferedImage.TYPE_INT_ARGB);
+    		
+    		bufferedImage.createGraphics().drawImage(image, 0, 0, this);
+    		
+    		setSize(getInsets().left+getInsets().right+Math.max(400,bufferedImage.getWidth()+60),
+    				getInsets().top+getInsets().bottom+Math.max(340, bufferedImage.getHeight()+60));
     	}
     	
     	
