@@ -1,14 +1,14 @@
-
+import java.io.*;
 import java.awt.*;
-
-import javax.imageio.ImageIO;
-
-import com.sun.glass.ui.Menu;
-import com.sun.glass.ui.MenuBar;
+import java.lang.Math;
+import javax.imageio.*;
+import java.awt.image.*;
+import java.awt.event.*;
 
 public class GraphicsApp extends Frame implements ActionListener{
-   
-   BufferedImage bufferedImage, bufferedImageBackup;
+
+	private static final long serialVersionUID = 1L;
+BufferedImage bufferedImage, bufferedImageBackup;
    Image image;
    Menu menu;
    MenuBar menubar;
@@ -23,28 +23,27 @@ public class GraphicsApp extends Frame implements ActionListener{
     //Constructor that creates the window
     public GraphicsApp(){
 
-        setSize(400,360);
+        setSize(400,400);
         setTitle("The Graphic App");
         setVisible(true);
 
         this.addWindowListener(new WindowAdapter(){
-
             public void windowClosing(
-                    WindowEvent e){
-                System.exit(0);
+                WindowEvent e){
+                    System.exit(0);
+                }
             }
-            
-        });
+        );
 
         //Emboss Button
         button1= new Button("Emboss");
         button1.setBounds(30,getHeight()-50,60,20);
         add(button1);
         button1.addActionListener(this);
-
-        //Sharpen Button
+        
+          //Sharpen Button
         button2 = new Button("Sharpen");
-        button2.setBounds(100,getHeight()-50,60,20);
+        button2.setBounds(100,getHeight()-50, 60, 20);
         add(button2);
         button2.addActionListener(this);
 
@@ -54,6 +53,7 @@ public class GraphicsApp extends Frame implements ActionListener{
         add(button3);
         button3.addActionListener(this);
 
+       
         //Blur Button
         button4 = new Button("Blur");
         button4.setBounds(240,getHeight()-50,60,20);
@@ -66,6 +66,7 @@ public class GraphicsApp extends Frame implements ActionListener{
         add(button5);
         button5.addActionListener(this);
 
+      
         //File menu
         menubar = new MenuBar();
         menu = new Menu("File");
@@ -110,7 +111,7 @@ public class GraphicsApp extends Frame implements ActionListener{
     				
     				File input = new File(dialog.getDirectory()+dialog.getFile());
     				//ImageIO allows you to read and write in various formats
-    				bufferedImage = ImageIO.getImageReader(input);
+    				bufferedImage = ImageIO.read(input);
     				
     				//resize window to match image
     				setSize(getInsets().left + getInsets().right+
@@ -154,7 +155,129 @@ public class GraphicsApp extends Frame implements ActionListener{
     		}catch(Exception e ){
     			System.out.println(e.getMessage());
     		}
+         repaint();
     	}
+    	
+    	//Emboss functionality
+    	if(event.getSource()==button1){
+    		
+    		bufferedImageBackup=bufferedImage;
+    		
+    		int width = bufferedImage.getWidth();
+    		int height = bufferedImage.getHeight();
+    		int pixels[] = new  int[width*height];
+    		
+    		PixelGrabber pg = new PixelGrabber(bufferedImage,0,0,
+    				width,height,pixels,0,width);
+    		
+    		try{
+    			//Store pixels in array (pixels)
+    			pg.grabPixels();
+    		} catch(InterruptedException e){
+    			
+    			System.out.println(e.getMessage());
+    		}
+    		
+    		///Fills in a two pixel border around the image with gray
+    		for (int x =0;x<=1; x++){
+    			for(int y = 0; y<height -1; y++){
+    				pixels[x+y*width]= 0x88888888;
+    			}
+    		}
+    		
+    		for ( int x = width-2;x<=width-1;x++){
+    			for(int y = 0 ; y<height-1;y++){
+    				pixels[x+y*width]=0x88888888;
+    			}
+    		}
+    		for(int x = 0 ; x<width-1;x++){
+    			for ( int y = 0 ; y<= 1 ; y++){
+    				pixels[x+y*width]=0x88888888;
+    			}
+    		}
+    		
+    		//loop through each row & column of pixels 
+    		for (int x = 2 ;x<width-1;x++){
+    			for(int y =2 ; y<height-1;y++){
+    				
+    				int red = ((pixels[(x + 1) + y * width + 1] & 0xFF) 
+    	                    - (pixels[x + y * width] & 0xFF)) + 128;
+    				
+    				  int green = (((pixels[(x + 1) + y * width + 1] 
+    	                        & 0xFF00) / 0x100) % 0x100 - 
+    	                        ((pixels[x + y * width] 
+    	                        & 0xFF00) / 0x100) % 0x100) + 128;
+
+    	                    int blue = (((pixels[(x + 1) + y * width + 1] & 
+    	                        0xFF0000) / 0x10000) % 0x100 - 
+    	                        ((pixels[x + y * width] & 
+    	                        0xFF0000) / 0x10000) % 0x100) + 128;
+    	            
+    	                    int avg = (red + green + blue) / 3;
+
+    	                    pixels[x + y * width] = (0xff000000 | avg << 16 | 
+    	                        avg << 8 | avg);
+    			}
+    		}
+    		
+    		//Get Image back to bufferedImage
+    		image=createImage(new MemoryImageSource(width,height,
+    				pixels,0,width));
+    		
+    		bufferedImage = new BufferedImage(width,height,
+    				BufferedImage.TYPE_INT_BGR);
+    		
+    		bufferedImage.createGraphics().drawImage(image,
+    				0, 0,this);
+    		
+    		repaint();
+    		
+    		
+    		
+    	//Sharpening an Image	
+    	} if (event.getSource()==button2){
+    		bufferedImageBackup=bufferedImage;
+    		Kernel kernel = new Kernel(3,3,new float[]{
+    				0.0f,-1.0f,0.0f,-1.0f,5.0f,-1.0f,
+    				0.0f,-1.0f,0.0f
+    		});
+    		ConvolveOp convolveOp= 
+    				new ConvolveOp(kernel,ConvolveOp.EDGE_NO_OP,null);
+    		
+    		BufferedImage temp = new BufferedImage(
+    				bufferedImage.getWidth(),bufferedImage.getHeight(),
+    				BufferedImage.TYPE_INT_ARGB);
+    		
+    		convolveOp.filter(bufferedImage, temp);
+    		
+    		bufferedImage=temp;
+    		repaint();
+    		
+    		//Brighten Image
+    	} if(event.getSource()==button3){
+    		bufferedImageBackup=bufferedImage;
+    		Kernel kernel = new Kernel(1,1,new float[]{3});
+    		
+    		ConvolveOp convolveOp = new ConvolveOp(kernel);
+    		
+    		BufferedImage temp = new BufferedImage(
+    				bufferedImage.getWidth(),bufferedImage.getHeight(),
+    				BufferedImage.TYPE_INT_ARGB);
+    		
+    		convolveOp.filter(bufferedImage, temp);
+    		
+    		bufferedImage=temp;
+    		repaint();
+    		
+    		
+    		//Blurring an Image
+    	} if(event.getSource()==button4){
+    		
+    	}
+    	
+    	
+    	
+    	
     }
     
     public void paint(Graphics g){
